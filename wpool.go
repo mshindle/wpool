@@ -34,8 +34,8 @@ func (w WorkerPool) Run(ctx context.Context) {
 		go worker(ctx, &wg, w.jobs, w.results)
 	}
 	wg.Wait()
-	close(w.Done)
 	close(w.results)
+	close(w.Done)
 }
 
 func worker(ctx context.Context, wg *sync.WaitGroup, jobs <-chan Job, results chan<- Result) {
