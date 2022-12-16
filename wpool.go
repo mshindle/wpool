@@ -10,7 +10,7 @@ type WorkerPool struct {
 	nWorkers int
 	jobs     chan Job
 	results  chan Result
-	Done     chan bool
+	done     chan bool
 }
 
 func New(n int) WorkerPool {
@@ -18,7 +18,7 @@ func New(n int) WorkerPool {
 		nWorkers: n,
 		jobs:     make(chan Job, n),
 		results:  make(chan Result, n),
-		Done:     make(chan bool),
+		done:     make(chan bool),
 	}
 }
 
@@ -35,7 +35,7 @@ func (w WorkerPool) Run(ctx context.Context) {
 	}
 	wg.Wait()
 	close(w.results)
-	close(w.Done)
+	close(w.done)
 }
 
 func worker(ctx context.Context, wg *sync.WaitGroup, jobs <-chan Job, results chan<- Result) {
@@ -71,9 +71,14 @@ func (w WorkerPool) AddJob(j Job) {
 // AddJobs adds a slice of jobs to the pool. Call will block until each Job
 // can be added to the channel.
 func (w WorkerPool) AddJobs(j []Job) {
-	for i, _ := range j {
+	for i := range j {
 		w.jobs <- j[i]
 	}
+}
+
+// Done returns a channel stating that work is complete.
+func (w WorkerPool) Done() <-chan bool {
+	return w.done
 }
 
 // Finish closes the job queue terminating the pool.

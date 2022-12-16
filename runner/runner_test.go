@@ -18,15 +18,23 @@ func proc(id int) {
 }
 
 func TestNew(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.TODO(), 2*smallTimeout)
-	defer cancel()
+	timeout := time.After(2 * smallTimeout)
+	e := make(chan error)
+	task := func(i int) {
+		time.Sleep(time.Duration(i+1) * time.Second)
+	}
 
 	r := New(smallTimeout)
+	r.Add(task)
+	go func() {
+		e <- r.Start(context.TODO())
+	}()
+
 	select {
-	case <-r.timeout:
-		log.Printf("received timeout")
-	case <-ctx.Done():
-		t.Errorf("timeout did not fire")
+	case <-e:
+		log.Printf("received timeout from runner")
+	case <-timeout:
+		t.Errorf("runner did not timeout")
 	}
 }
 
@@ -84,7 +92,7 @@ func TestRunner_Start(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			r := New(tt.d)
 			r.Add(tt.tasks...)
-			if err := r.Start(); err != tt.err {
+			if err := r.Start(context.Background()); err != tt.err {
 				t.Errorf("Start() error = %v, wantErr %v", err, tt.err)
 			}
 		})
@@ -101,7 +109,7 @@ func TestRunner_gotInterrupt(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		err = r.Start()
+		err = r.Start(context.Background())
 	}()
 
 	// send the interrupt signal

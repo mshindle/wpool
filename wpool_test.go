@@ -42,7 +42,7 @@ func TestWorkerPool(t *testing.T) {
 			if val != i {
 				t.Fatalf("wrong value: got = %d; want = %d", val, i*i)
 			}
-		case <-w.Done:
+		case <-w.done:
 			return
 		default:
 
@@ -64,7 +64,7 @@ func TestWorkerPool_TimeOut(t *testing.T) {
 			if r.Err != nil && !errors.Is(r.Err, context.DeadlineExceeded) {
 				t.Fatalf("expected error: %v; got: %v", context.DeadlineExceeded, r.Err)
 			}
-		case <-w.Done:
+		case <-w.done:
 			return
 		default:
 		}
@@ -84,7 +84,7 @@ func TestWorkerPool_Cancel(t *testing.T) {
 			if r.Err != nil && !errors.Is(r.Err, context.Canceled) {
 				t.Fatalf("expected error: %v; got: %v", context.Canceled, r.Err)
 			}
-		case <-w.Done:
+		case <-w.done:
 			return
 		default:
 		}
